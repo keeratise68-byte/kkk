@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Code Matching Lab - เกมจับคู่โค้ดไซเบอร์ (วิชาวิทยาการคำนวณ)</title>
+
+    <!-- Google Fonts: Chakra Petch & Kanit for Thai Cyberpunk IDE typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Kanit:wght@300;400;500;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Kanit', 'sans-serif'],
+                        tech: ['Chakra Petch', 'sans-serif'],
+                        code: ['Fira Code', 'monospace']
+                    },
+                    colors: {
+                        cyber: {
+                            dark: '#0a0d16',
+                            panel: '#111827',
+                            card: '#1f2937',
+                            cyan: '#06b6d4',
+                            magenta: '#d946ef',
+                            purple: '#8b5cf6',
+                            green: '#10b981',
+                            amber: '#f59e0b',
+                            rose: '#f43f5e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #070913;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(217, 70, 239, 0.1) 0%, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+            color: #f3f4f6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(6, 182, 212, 0.08);
+        }
+
+        /* Cyberpunk Neon Glow Buttons */
+        .btn-neon-cyan {
+            background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+            border: 1px solid #38bdf8;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-neon-cyan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.7);
+            filter: brightness(1.15);
+        }
+        .btn-neon-cyan:active {
+            transform: translateY(1px);
+        }
+
+        /* Interactive Matching Card Styling */
+        .card-interactive {
+            transition: all 0.25s ease-out;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-interactive:hover {
+            transform: translateY(-3px) scale(1.01);
+            border-color: rgba(6, 182, 212, 0.8);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+        }
+
+        .card-selected {
+            border-color: #d946ef !important;
+            background: rgba(217, 70, 239, 0.15) !important;
+            box-shadow: 0 0 25px rgba(217, 70, 239, 0.5), inset 0 0 10px rgba(217, 70, 239, 0.3) !important;
+            transform: scale(1.02);
+        }
+
+        .card-matched {
+            border-color: #10b981 !important;
+            background: rgba(16, 185, 129, 0.12) !important;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3) !important;
+            opacity: 0.65;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .card-wrong {
+            animation: shake 0.4s ease-in-out;
+            border-color: #f43f5e !important;
+            background: rgba(244, 63, 94, 0.2) !important;
+            box-shadow: 0 0 25px rgba(244, 63, 94, 0.6) !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .animate-pulse-glow {
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #06b6d4;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-100 font-sans leading-relaxed">
+
+    <!-- Top HUD Navigation & Status Bar -->
+    <header class="w-full glass-panel sticky top-0 z-30 border-b border-cyan-500/30 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            
+            <!-- Logo & Level Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/50 flex items-center justify-center text-cyan-400 text-xl font-tech shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                    <i class="fa-solid fa-code"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold font-tech text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-300 to-pink-400">
+                        CODE MATCHING LAB
+                    </h1>
+                    <div class="text-[11px] text-slate-400 flex items-center gap-2">
+                        <span>วิชาวิทยาการคำนวณ (ม.1-ม.3)</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                        <span id="hud-level-badge" class="text-cyan-300 font-semibold">ด่านที่ 1: โค้ด ➔ คำแปล</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score & Hearts Counter -->
+            <div class="flex items-center gap-4 sm:gap-6 bg-slate-900/80 px-4 py-2 rounded-2xl border border-slate-700/60">
+                <!-- Hearts (Lives) -->
+                <div class="flex items-center gap-1.5" title="พลังชีวิตคงเหลือ">
+                    <span class="text-xs text-slate-400 font-semibold mr-1 hidden sm:inline">พลังชีวิต:</span>
+                    <div id="hud-hearts" class="flex items-center gap-1 text-lg sm:text-xl text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]">
+                        <i class="fa-solid fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
+                    </div>
+                </div>
+
+                <div class="h-6 w-px bg-slate-700"></div>
+
+                <!-- Score -->
+                <div class="flex items-center gap-2" title="คะแนนสะสม">
+                    <i class="fa-solid fa-trophy text-amber-400 text-base sm:text-lg"></i>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-tech">SCORE</div>
+                        <div id="hud-score" class="text-lg sm:text-xl font-black text-amber-300 font-tech leading-none">0</div>
+                    </div>
+                </div>
+
+                <div class="h-6 w-px bg-slate-700"></div>
+
+                <!-- Sound Control Button -->
+                <button onclick="toggleAudio()" id="btn-sound" class="text-slate-400 hover:text-cyan-300 transition text-lg" title="เปิด/ปิด เสียง">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Level Progress Bar Indicator -->
+        <div class="max-w-6xl mx-auto mt-2.5">
+            <div class="flex items-center justify-between text-[11px] text-slate-400 font-tech mb-1">
+                <span>STAGE PROGRESS</span>
+                <span id="hud-progress-text">0 / 4 จับคู่สำเร็จ</span>
+            </div>
+            <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                <div id="hud-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 w-0 transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Container -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 flex flex-col justify-between my-auto">
+        
+        <!-- Level Description Header -->
+        <div id="level-header-box" class="glass-panel p-4 rounded-2xl mb-4 border-l-4 border-l-cyan-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+                <div class="text-xs font-bold font-tech text-cyan-400 tracking-wider uppercase" id="stage-number-tag">
+                    STAGE 01 / 04
+                </div>
+                <h2 id="stage-title" class="text-lg sm:text-xl font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-link text-cyan-400"></i> จับคู่คำสั่งโค้ด Python กับคำแปลภาษาไทย
+                </h2>
+                <p id="stage-desc" class="text-xs sm:text-sm text-slate-300 mt-0.5">
+                    คลิกเลือกการ์ดคำสั่งโค้ดทางซ้าย แล้วคลิกเลือกคำแปลที่ตรงกันทางขวา
+                </p>
+            </div>
+
+            <!-- Hint Tag -->
+            <div class="px-3 py-1.5 bg-slate-900/90 rounded-xl border border-purple-500/40 text-xs text-purple-300 flex items-center gap-2 shrink-0">
+                <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                <span id="stage-hint-text">ตอบถูก +10 คะแนน | ตอบผิด -5 คะแนน & เสีย 1 หัวใจ</span>
+            </div>
+        </div>
+
+        <!-- STAGE 1-3 MATCHING BOARD (Columns Grid Layout) -->
+        <div id="board-standard" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 my-auto">
+            
+            <!-- Left Column: Source Cards (Code) -->
+            <div class="space-y-3">
+                <div class="text-xs font-bold font-tech text-cyan-300 flex items-center gap-2 px-1">
+                    <i class="fa-solid fa-terminal text-cyan-400"></i>
+                    <span id="col-left-label">รายการคำสั่งโค้ด (CODE)</span>
+                </div>
+                <div id="col-left-cards" class="space-y-3">
+                    <!-- Dynamic Left Cards generated by JS -->
+                </div>
+            </div>
+
+            <!-- Right Column: Target Cards (Translation / Benefit / Usage) -->
+            <div class="space-y-3">
+                <div class="text-xs font-bold font-tech text-pink-300 flex items-center gap-2 px-1">
+                    <i class="fa-solid fa-bullseye text-pink-400"></i>
+                    <span id="col-right-label">เป้าหมายจับคู่ (TARGET)</span>
+                </div>
+                <div id="col-right-cards" class="space-y-3">
+                    <!-- Dynamic Right Cards generated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- STAGE 4 SCENARIO TRIPLET BOARD (Scenario Problem Matching) -->
+        <div id="board-scenario" class="hidden space-y-4 my-auto">
+            
+            <!-- Scenario Challenge Card -->
+            <div class="glass-panel p-5 rounded-2xl border-2 border-purple-500/50 bg-gradient-to-r from-purple-950/40 via-slate-900/80 to-slate-900/80 shadow-[0_0_30px_rgba(139,92,246,0.2)] space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold border border-purple-400/30 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-play text-purple-400 animate-pulse"></i> โจทย์สถานการณ์ที่ <span id="scenario-index">1</span>/4
+                    </span>
+                    <span class="text-xs text-slate-400 font-tech">MATHAYOM 1-3 COMPUTING SCIENCE</span>
+                </div>
+                <h3 id="scenario-text" class="text-base sm:text-xl font-bold text-amber-300 leading-snug">
+                    "ต้องการสร้างระบบทักทายผู้ใช้งานเมื่อเปิดเข้าสู่โปรแกรม"
+                </h3>
+                <p class="text-xs text-slate-300">
+                    โปรดเลือกองค์ประกอบทั้ง 3 ส่วน (โค้ด + คำแปล + การนำไปใช้) ให้สัมพันธ์กับโจทย์สถานการณ์นี้
+                </p>
+            </div>
+
+            <!-- Triplet Selection Slots -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- Slot 1: Code Selection -->
+                <div class="glass-panel p-3.5 rounded-2xl border border-cyan-500/30 space-y-2">
+                    <div class="text-xs font-bold font-tech text-cyan-300 border-b border-cyan-800/60 pb-1.5 flex items-center justify-between">
+                        <span>1. เลือกคำสั่งโค้ด (Code)</span>
+                        <i class="fa-solid fa-code text-cyan-400"></i>
+                    </div>
+                    <div id="scenario-options-code" class="space-y-2">
+                        <!-- Dynamic Code Options -->
+                    </div>
+                </div>
+
+                <!-- Slot 2: Translation Selection -->
+                <div class="glass-panel p-3.5 rounded-2xl border border-pink-500/30 space-y-2">
+                    <div class="text-xs font-bold font-tech text-pink-300 border-b border-pink-800/60 pb-1.5 flex items-center justify-between">
+                        <span>2. เลือกคำแปล (Translation)</span>
+                        <i class="fa-solid fa-language text-pink-400"></i>
+                    </div>
+                    <div id="scenario-options-translation" class="space-y-2">
+                        <!-- Dynamic Translation Options -->
+                    </div>
+                </div>
+
+                <!-- Slot 3: Usage Selection -->
+                <div class="glass-panel p-3.5 rounded-2xl border border-emerald-500/30 space-y-2">
+                    <div class="text-xs font-bold font-tech text-emerald-300 border-b border-emerald-800/60 pb-1.5 flex items-center justify-between">
+                        <span>3. เลือกประโยชน์/การใช้งาน</span>
+                        <i class="fa-solid fa-rocket text-emerald-400"></i>
+                    </div>
+                    <div id="scenario-options-usage" class="space-y-2">
+                        <!-- Dynamic Usage Options -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scenario Submit Button -->
+            <div class="flex justify-end pt-2">
+                <button id="btn-submit-scenario" onclick="evaluateScenarioTriplet()" disabled class="btn-neon-cyan text-white font-extrabold px-8 py-3 rounded-xl text-sm sm:text-base flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-check-circle text-lg"></i>
+                    <span>ตรวจสอบคำตอบสถานการณ์</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Tag -->
+    <footer class="w-full text-center py-3 text-[11px] text-slate-500 border-t border-slate-800/60">
+        สื่อการเรียนรู้อิเล็กทรอนิกส์ วิชาวิทยาการคำนวณ ชั้นมัธยมศึกษาปีที่ 1-3 | สถาบันส่งเสริมการสอนวิทยาศาสตร์และเทคโนโลยี (สสวท.)
+    </footer>
+
+
+    <!-- 1. START MENU MODAL -->
+    <div id="modal-start" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+        <div class="glass-panel max-w-xl w-full rounded-3xl p-6 sm:p-8 border-2 border-cyan-400/40 space-y-6 text-center shadow-[0_0_50px_rgba(6,182,212,0.25)] relative overflow-hidden">
+            
+            <!-- Header Badges -->
+            <div class="space-y-2">
+                <div class="inline-flex items-center gap-2 px-3 me-2 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-semibold border border-cyan-400/30">
+                    <i class="fa-solid fa-graduation-cap"></i> วิชาวิทยาการคำนวณ มัธยมศึกษาปีที่ 1-3
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold font-tech text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-400">
+                    CODE MATCHING LAB
+                </h1>
+                <p class="text-xs sm:text-sm text-slate-300 max-w-md mx-auto">
+                    เกมจับคู่ทดสอบความเข้าใจโครงสร้างคำสั่งโปรแกรมภาษา Python พร้อมวิเคราะห์คำแปลและประโยชน์ใช้งานจริง
+                </p>
+            </div>
+
+            <!-- Rules Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-xs">
+                <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-cyan-500/30 space-y-1">
+                    <div class="font-bold text-cyan-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-layer-group text-cyan-400"></i> มีทั้งหมด 4 ด่านความท้าทาย:
+                    </div>
+                    <ul class="text-slate-300 space-y-1 list-disc list-inside text-[11px]">
+                        <li>ด่าน 1: จับคู่ [โค้ด ➔ คำแปล]</li>
+                        <li>ด่าน 2: จับคู่ [โค้ด ➔ ประโยชน์]</li>
+                        <li>ด่าน 3: จับคู่ [โค้ด ➔ การใช้งานจริง]</li>
+                        <li>ด่าน 4: โจทย์สถานการณ์ [3 ใบเชื่อมโยง]</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-pink-500/30 space-y-1">
+                    <div class="font-bold text-pink-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-heart text-rose-500"></i> กติกาการเล่น:
+                    </div>
+                    <ul class="text-slate-300 space-y-1 list-disc list-inside text-[11px]">
+                        <li>เริ่มด้วยพลังชีวิต ❤️ 3 ดวง</li>
+                        <li>ตอบถูก: <strong class="text-emerald-400">+10 คะแนน</strong></li>
+                        <li>ตอบผิด: <strong class="text-rose-400">-5 คะแนน</strong> และเสีย 1 หัวใจ</li>
+                        <li>หากหัวใจหมด = Game Over</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Start Button -->
+            <button onclick="startGame()" class="w-full btn-neon-cyan text-white font-extrabold py-3.5 rounded-2xl text-base sm:text-lg flex items-center justify-center gap-2">
+                <i class="fa-solid fa-play-circle text-xl"></i>
+                <span>เริ่มเข้าสู่การทดลองไซเบอร์</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. EDUCATIONAL EXPLANATION MODAL (Popup Summary) -->
+    <div id="modal-educational" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden">
+        <div id="edu-modal-card" class="glass-panel max-w-lg w-full rounded-3xl p-6 border-2 space-y-4 text-left shadow-2xl transition-all">
+            
+            <!-- Dynamic Status Header -->
+            <div class="flex items-center justify-between border-b pb-3 border-slate-700">
+                <div id="edu-status-badge" class="flex items-center gap-2 text-sm sm:text-base font-extrabold">
+                    <i class="fa-solid fa-circle-check text-xl text-emerald-400"></i>
+                    <span>จับคู่ถูกต้อง! +10 คะแนน</span>
+                </div>
+                <div class="text-xs text-slate-400 font-tech">EDUCATIONAL RECAP</div>
+            </div>
+
+            <!-- Content Relation Box -->
+            <div class="space-y-3 text-xs sm:text-sm">
+                
+                <!-- Code Snippet -->
+                <div class="bg-slate-950 p-3 rounded-xl border border-cyan-500/40">
+                    <div class="text-[10px] text-cyan-400 font-tech uppercase mb-1">1. ตัวอย่างคำสั่งโปรแกรม (Python Code)</div>
+                    <code id="edu-code" class="font-code text-cyan-200 text-sm block">print("Hello World")</code>
+                </div>
+
+                <!-- Translation -->
+                <div class="bg-slate-900/90 p-3 rounded-xl border border-pink-500/30">
+                    <div class="text-[10px] text-pink-400 font-tech uppercase mb-0.5">2. คำแปลภาษาไทย (Meaning)</div>
+                    <div id="edu-translation" class="text-slate-200 font-medium">แสดงผลข้อความออกทางหน้าจอ</div>
+                </div>
+
+                <!-- Benefit -->
+                <div class="bg-slate-900/90 p-3 rounded-xl border border-purple-500/30">
+                    <div class="text-[10px] text-purple-400 font-tech uppercase mb-0.5">3. ประโยชน์ที่ได้รับ (Benefit)</div>
+                    <div id="edu-benefit" class="text-slate-200 font-medium">ช่วยให้โปรแกรมสามารถสื่อสารกับผู้ใช้งานได้</div>
+                </div>
+
+                <!-- Real Example -->
+                <div class="bg-slate-900/90 p-3 rounded-xl border border-emerald-500/30">
+                    <div class="text-[10px] text-emerald-400 font-tech uppercase mb-0.5">4. การนำไปใช้ในชีวิตจริง (Application)</div>
+                    <div id="edu-usage" class="text-slate-200 font-medium">แสดงข้อความต้อนรับเมื่อผู้ใช้เปิดเข้าใช้งานแอปพลิเคชัน</div>
+                </div>
+            </div>
+
+            <!-- Review Hint (Shown if incorrect) -->
+            <div id="edu-review-tip-box" class="hidden bg-rose-950/40 p-3 rounded-xl border border-rose-500/40 text-xs text-rose-200 space-y-1">
+                <div class="font-bold flex items-center gap-1.5 text-rose-300">
+                    <i class="fa-solid fa-triangle-exclamation"></i> เกร็ดความรู้ทบทวนเพื่อไม่ให้จำสับสน:
+                </div>
+                <div id="edu-review-tip-text">...</div>
+            </div>
+
+            <!-- Action Button -->
+            <button onclick="closeEducationalModal()" class="w-full btn-neon-cyan text-white font-extrabold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+                <span>เข้าใจแล้ว ไปต่อกันเลย</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. LEVEL COMPLETE MODAL -->
+    <div id="modal-level-complete" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md hidden">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-6 sm:p-8 border-2 border-emerald-400/50 space-y-5 text-center shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+            <div class="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center mx-auto text-3xl text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+                <i class="fa-solid fa-flag-checkered"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-2xl font-bold text-emerald-300">ผ่านด่านสำเร็จ!</h3>
+                <p id="level-complete-desc" class="text-xs text-slate-300">ยอดเยี่ยมมาก คุณทำคะแนนผ่านเกณฑ์ด่านที่ 1 เรียบร้อย</p>
+            </div>
+            <button onclick="nextLevel()" class="w-full btn-neon-cyan text-white font-extrabold py-3.5 rounded-2xl text-base flex items-center justify-center gap-2">
+                <span>ไปท้าทายต่อในด่านถัดไป</span>
+                <i class="fa-solid fa-forward"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. VICTORY / ALL STAGES CLEAR MODAL -->
+    <div id="modal-victory" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-md hidden">
+        <div class="glass-panel max-w-lg w-full rounded-3xl p-6 sm:p-8 border-2 border-amber-400/50 space-y-6 text-center shadow-[0_0_50px_rgba(245,158,11,0.35)]">
+            <div class="text-6xl animate-bounce">🏆</div>
+            <div class="space-y-1">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-amber-300">CYBER CODING MASTER!</h2>
+                <p class="text-xs text-cyan-200">ยินดีด้วย! คุณผ่านการทดสอบจับคู่โค้ดทั้ง 4 ด่านสมบูรณ์</p>
+            </div>
+
+            <div class="bg-slate-900/90 p-4 rounded-2xl border border-amber-500/40 space-y-2">
+                <div class="text-xs text-slate-400 font-tech">FINAL SCORE</div>
+                <div id="victory-score" class="text-4xl sm:text-5xl font-black text-amber-400 font-tech tracking-wider">120</div>
+                <div id="victory-grade" class="text-xs font-bold text-emerald-400">🌟 ได้รับตราประทับ: "นักเขียนโค้ดไซเบอร์ระดับยอดเยี่ยม"</div>
+            </div>
+
+            <!-- Concept Summary Badges -->
+            <div class="text-left bg-slate-950/80 p-3.5 rounded-xl border border-cyan-500/30 text-xs space-y-1.5">
+                <div class="font-bold text-cyan-300 border-b border-cyan-800 pb-1">
+                    <i class="fa-solid fa-circle-info"></i> ทักษะโค้ด Python ที่คุณได้เรียนรู้แล้ว:
+                </div>
+                <div class="grid grid-cols-2 gap-1 text-[11px] text-slate-300">
+                    <div>• `print()` - การแสดงผล</div>
+                    <div>• `input()` - การรับค่า</div>
+                    <div>• `if-else` - เงื่อนไขการตัดสินใจ</div>
+                    <div>• `for loop` - การทำงานซ้ำ</div>
+                    <div>• `while loop` - ซ้ำตามเงื่อนไข</div>
+                    <div>• `int()` - การแปลงชนิดข้อมูล</div>
+                </div>
+            </div>
+
+            <button onclick="resetGame()" class="w-full btn-neon-cyan text-white font-extrabold py-3.5 rounded-2xl text-base flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>เล่นใหม่อีกครั้ง</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 5. GAME OVER MODAL -->
+    <div id="modal-gameover" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-md hidden">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-6 sm:p-8 border-2 border-rose-500/50 space-y-5 text-center shadow-[0_0_50px_rgba(244,63,94,0.35)]">
+            <div class="w-16 h-16 rounded-full bg-rose-500/20 border-2 border-rose-500 flex items-center justify-center mx-auto text-3xl text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.5)]">
+                <i class="fa-solid fa-heart-crack"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-2xl font-bold text-rose-400">SYSTEM FAILURE (GAME OVER)</h3>
+                <p class="text-xs text-slate-300">พลังชีวิตของคุณหมดลงแล้ว ไม่ต้องเสียใจ! ลองทบทวนแล้วลุยใหม่อีกครั้ง</p>
+            </div>
+
+            <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700 text-xs text-slate-400">
+                คะแนนที่คุณทำได้: <strong id="gameover-score" class="text-amber-400 font-tech text-base">0</strong> คะแนน
+            </div>
+
+            <button onclick="resetGame()" class="w-full btn-neon-cyan text-white font-extrabold py-3.5 rounded-2xl text-base flex items-center justify-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>ลองใหม่อีกครั้ง</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* ======================================================================
+         * 1. EDUCATIONAL DATASET (PYTHON CODE TRIPLETS FOR MATHAYOM 1-3)
+         * ====================================================================== */
+        const CODE_DATASET = [
+            {
+                id: "item_print",
+                code: 'print("Hello, World!")',
+                translation: 'แสดงผลข้อความ "Hello, World!" ออกทางหน้าจอ',
+                benefit: 'ช่วยให้โปรแกรมสามารถแสดงผลลัพธ์ ข้อความ หรือการแจ้งเตือนต่างๆ ให้ผู้ใช้เห็นได้',
+                usage: 'ใช้ต้อนรับผู้ใช้งาน หรือแสดงผลลัพธ์จากการคำนวณทางหน้าจอ',
+                reviewTip: 'สังเกตคำว่า `print` แปลว่า "พิมพ์/แสดงผล" ใช้เครื่องหมายวงเล็บ () และอัญประกาศ "" ครอบข้อความเสมอ',
+                scenario: 'ต้องการสร้างระบบทักทายต้อนรับผู้ใช้งานเมื่อเปิดเข้าสู่โปรแกรม'
+            },
+            {
+                id: "item_input",
+                code: 'age = input("กรอกอายุ: ")',
+                translation: 'รับค่าข้อความจากผู้ใช้ผ่านแป้นพิมพ์ แล้วนำไปเก็บไว้ในตัวแปร age',
+                benefit: 'ทำให้โปรแกรมเป็นแบบปฏิสัมพันธ์ (Interactive) สามารถรับข้อมูลจากผู้ใช้เข้ามาประมวลผลได้',
+                usage: 'ใช้รับข้อมูลชื่อ รหัสผ่าน หรือตัวเลขในการกรอกฟอร์มออนไลน์',
+                reviewTip: 'คำสั่ง `input()` ใช้รับข้อมูลจากแป้นพิมพ์ โดยผลลัพธ์ที่ได้จะเป็นข้อความ (String) เสมอ',
+                scenario: 'ต้องการสร้างฟอร์มสมัครสมาชิกที่ต้องให้ผู้ใช้พิมพ์ชื่อและอายุผ่านแป้นพิมพ์'
+            },
+            {
+                id: "item_if",
+                code: 'if score >= 50:',
+                translation: 'ตรวจสอบเงื่อนไขว่า ค่าในตัวแปร score มากกว่าหรือเท่ากับ 50 หรือไม่',
+                benefit: 'ช่วยให้โปรแกรมสามารถตัดสินใจเลือกทำคำสั่งเฉพาะเมื่อเงื่อนไขเป็นจริงเท่านั้น',
+                usage: 'ใช้ตรวจสอบคะแนนสอบเพื่อประมวลผลว่าสอบ "ผ่าน" หรือ "ไม่ผ่าน"',
+                reviewTip: 'โครงสร้าง `if` ต้องมีเงื่อนไขและลงท้ายด้วยเครื่องหมายเครื่องหมายโคลอน `:` เสมอ',
+                scenario: 'ต้องการตรวจสอบคะแนนสอบของนักเรียนว่าผ่านเกณฑ์ขั้นต่ำ 50 คะแนนหรือไม่'
+            },
+            {
+                id: "item_for",
+                code: 'for i in range(5):',
+                translation: 'วนซ้ำทำงานคำสั่งที่กำหนดเป็นจำนวน 5 รอบ (i เริ่มจาก 0 ถึง 4)',
+                benefit: 'ช่วยลดการเขียนโค้ดซ้ำๆ เดิม ประหยัดเวลา และทำให้โค้ดกระชับอ่านง่าย',
+                usage: 'ใช้พิมพ์ดาว ⭐ จำนวน 5 ดวง หรือประมวลผลรายการสินค้าในตะกร้าทีละชิ้น',
+                reviewTip: '`range(5)` จะสร้างลำดับตัวเลข 5 ตัว คือ 0, 1, 2, 3, 4 (ไม่รวม 5)',
+                scenario: 'ต้องการพิมพ์เครื่องหมายดาว ⭐ ซ้ำๆ กันจำนวน 5 รอบลงบนหน้าจอ'
+            },
+            {
+                id: "item_while",
+                code: 'while hp > 0:',
+                translation: 'วนซ้ำทำคำสั่งไปเรื่อยๆ ตราบใดที่ค่า hp ยังคงมากกว่า 0',
+                benefit: 'เหมาะสำหรับการทำงานซ้ำที่ไม่ทราบจำนวนรอบที่แน่นอน ลูปจะหยุดเมื่อเงื่อนไขกลายเป็นเท็จ',
+                usage: 'ใช้ในการรันลูปหลักของเกม (Game Loop) ให้ตัวละครดำเนินต่อไปตราบใดที่พลังชีวิตยังไม่หมด',
+                reviewTip: '`while` แปลว่า "ตราบใดที่" จะตรวจสอบเงื่อนไขก่อนเริ่มทำงานทุกรอบ',
+                scenario: 'ต้องการให้ตัวละครในเกมเล่นต่อไปเรื่อยๆ ตราบใดที่พลังชีวิต (hp) ยังไม่หมด'
+            },
+            {
+                id: "item_int",
+                code: 'num = int(input_str)',
+                translation: 'แปลงชนิดข้อมูลจากข้อความ (String) ให้กลายเป็นตัวเลขจำนวนเต็ม (Integer)',
+                benefit: 'ช่วยให้ข้อมูลที่รับมาจากแป้นพิมพ์สามารถนำไปคำนวณทางคณิตศาสตร์ (บวก ลบ คูณ หาร) ได้',
+                usage: 'แปลงตัวเลขราคาที่ผู้ใช้พิมพ์เข้ามา เพื่อนำไปคำนวณราคารวมราคาสินค้า',
+                reviewTip: 'ฟังก์ชัน `int()` ย่อมาจาก Integer ใช้แปลงข้อความตัวเลขให้กลายเป็นตัวเลขเพื่อนำไปคำนวณ',
+                scenario: 'รับข้อความตัวเลขจากแป้นพิมพ์แล้วต้องการแปลงเป็นตัวเลขเพื่อนำไปคำนวณบวกลบ'
+            }
+        ];
+
+        /* ======================================================================
+         * 2. SOUND SYNTHESIZER (WEB AUDIO API)
+         * ====================================================================== */
+        let audioCtx = null;
+        let isAudioMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (isAudioMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'select') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'correct') {
+                // Happy Cyber Chord
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                    gain.gain.setValueAtTime(0.12, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.06);
+                    osc.stop(now + idx * 0.06 + 0.25);
+                });
+            } else if (type === 'wrong') {
+                // Sawtooth error buzz
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'win') {
+                // Victory Fanfare
+                [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.4);
+                });
+            }
+        }
+
+        function toggleAudio() {
+            isAudioMuted = !isAudioMuted;
+            const btn = document.getElementById('btn-sound');
+            if (isAudioMuted) {
+                btn.className = "text-rose-400 hover:text-rose-300 transition text-lg";
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+            } else {
+                btn.className = "text-slate-400 hover:text-cyan-300 transition text-lg";
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                playSound('select');
+            }
+        }
+
+        /* ======================================================================
+         * 3. GAME STATE MANAGEMENT
+         * ====================================================================== */
+        let currentStage = 1; // Stages 1 to 4
+        let score = 0;
+        let hearts = 3;
+        
+        // Stage 1-3 Matching variables
+        let stageItems = [];
+        let matchedPairs = [];
+        let selectedLeftCard = null;
+        let selectedRightCard = null;
+
+        // Stage 4 Scenario variables
+        let scenarioIndex = 0;
+        let scenarioItems = [];
+        let scenarioSelections = { code: null, translation: null, usage: null };
+
+        /* Helper: Utility Shuffle Array */
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function startGame() {
+            playSound('select');
+            document.getElementById('modal-start').classList.add('hidden');
+            score = 0;
+            hearts = 3;
+            currentStage = 1;
+            updateHUD();
+            loadStage(currentStage);
+        }
+
+        function resetGame() {
+            playSound('select');
+            document.getElementById('modal-victory').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.add('hidden');
+            startGame();
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-score').innerText = score;
+            
+            // Render Hearts
+            const heartsContainer = document.getElementById('hud-hearts');
+            heartsContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < hearts) {
+                    heartsContainer.innerHTML += '<i class="fa-solid fa-heart text-rose-500"></i>';
+                } else {
+                    heartsContainer.innerHTML += '<i class="fa-regular fa-heart text-slate-600"></i>';
+                }
+            }
+        }
+
+        /* ======================================================================
+         * 4. STAGE LOADING ENGINE
+         * ====================================================================== */
+        function loadStage(stageNum) {
+            currentStage = stageNum;
+            matchedPairs = [];
+            selectedLeftCard = null;
+            selectedRightCard = null;
+
+            const stageTag = document.getElementById('stage-number-tag');
+            const stageTitle = document.getElementById('stage-title');
+            const stageDesc = document.getElementById('stage-desc');
+            const badge = document.getElementById('hud-level-badge');
+
+            const boardStandard = document.getElementById('board-standard');
+            const boardScenario = document.getElementById('board-scenario');
+
+            if (stageNum <= 3) {
+                boardStandard.classList.remove('hidden');
+                boardScenario.classList.add('hidden');
+
+                // Pick 4 items for matching in Stage 1-3
+                stageItems = shuffleArray(CODE_DATASET).slice(0, 4);
+
+                if (stageNum === 1) {
+                    stageTag.innerText = "STAGE 01 / 04";
+                    stageTitle.innerHTML = '<i class="fa-solid fa-link text-cyan-400"></i> ด่านที่ 1: จับคู่ [โค้ด ➔ คำแปลภาษาไทย]';
+                    stageDesc.innerText = 'คลิกเลือกคำสั่งโค้ดทางซ้าย แล้วคลิกเลือกความหมายภาษาไทยที่ถูกต้องทางขวา';
+                    badge.innerText = 'ด่านที่ 1: โค้ด ➔ คำแปล';
+                    document.getElementById('col-left-label').innerText = "คำสั่งโค้ด (PYTHON CODE)";
+                    document.getElementById('col-right-label').innerText = "คำแปลภาษาไทย (TRANSLATION)";
+                } else if (stageNum === 2) {
+                    stageTag.innerText = "STAGE 02 / 04";
+                    stageTitle.innerHTML = '<i class="fa-solid fa-lightbulb text-purple-400"></i> ด่านที่ 2: จับคู่ [โค้ด ➔ ประโยชน์ที่ได้รับ]';
+                    stageDesc.innerText = 'คลิกเลือกคำสั่งโค้ดทางซ้าย แล้วคลิกเลือกประโยชน์/จุดเด่นของคำสั่งนั้นทางขวา';
+                    badge.innerText = 'ด่านที่ 2: โค้ด ➔ ประโยชน์';
+                    document.getElementById('col-left-label').innerText = "คำสั่งโค้ด (PYTHON CODE)";
+                    document.getElementById('col-right-label').innerText = "ประโยชน์การใช้งาน (BENEFIT)";
+                } else if (stageNum === 3) {
+                    stageTag.innerText = "STAGE 03 / 04";
+                    stageTitle.innerHTML = '<i class="fa-solid fa-rocket text-pink-400"></i> ด่านที่ 3: จับคู่ [โค้ด ➔ การนำไปใช้ในชีวิตจริง]';
+                    stageDesc.innerText = 'คลิกเลือกคำสั่งโค้ดทางซ้าย แล้วคลิกเลือกตัวอย่างระบบงานจริงทางขวา';
+                    badge.innerText = 'ด่านที่ 3: โค้ด ➔ งานจริง';
+                    document.getElementById('col-left-label').innerText = "คำสั่งโค้ด (PYTHON CODE)";
+                    document.getElementById('col-right-label').innerText = "การนำไปใช้จริง (APPLICATION)";
+                }
+
+                renderStandardBoard();
+                updateProgressUI(0, 4);
+
+            } else if (stageNum === 4) {
+                // STAGE 4: Scenario Triplet Challenge
+                boardStandard.classList.add('hidden');
+                boardScenario.classList.remove('hidden');
+
+                stageTag.innerText = "STAGE 04 / 04";
+                stageTitle.innerHTML = '<i class="fa-solid fa-puzzle-piece text-amber-400"></i> ด่านที่ 4: อ่านโจทย์สถานการณ์ แล้วจับคู่ 3 ใบเชื่อมโยง';
+                stageDesc.innerText = 'วิเคราะห์โจทย์สถานการณ์ แล้วเลือก 3 ส่วนประกอบ (โค้ด + คำแปล + การใช้งาน) ให้ถูกต้องสมบูรณ์';
+                badge.innerText = 'ด่านที่ 4: โจทย์สถานการณ์';
+
+                scenarioIndex = 0;
+                scenarioItems = shuffleArray(CODE_DATASET).slice(0, 4); // 4 Scenario questions
+                loadScenarioQuestion(scenarioIndex);
+            }
+        }
+
+        /* ======================================================================
+         * 5. STAGES 1-3 CARD RENDERING & MATCHING LOGIC
+         * ====================================================================== */
+        function renderStandardBoard() {
+            const leftContainer = document.getElementById('col-left-cards');
+            const rightContainer = document.getElementById('col-right-cards');
+
+            leftContainer.innerHTML = '';
+            rightContainer.innerHTML = '';
+
+            // Left side = Source Codes (Ordered/Shuffled)
+            const leftList = shuffleArray(stageItems);
+            
+            // Right side = Target based on stage
+            const rightList = shuffleArray(stageItems);
+
+            leftList.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-3.5 rounded-xl border border-slate-700/80 card-interactive flex items-center justify-between gap-3';
+                card.dataset.id = item.id;
+                card.onclick = () => selectLeftCard(card, item);
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <div class="w-2.5 h-8 rounded-full bg-cyan-400 shrink-0"></div>
+                        <code class="font-code text-cyan-200 font-semibold text-xs sm:text-sm tracking-wide truncate">${escapeHtml(item.code)}</code>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-500 text-xs shrink-0"></i>
+                `;
+                leftContainer.appendChild(card);
+            });
+
+            rightList.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-3.5 rounded-xl border border-slate-700/80 card-interactive flex items-center justify-between gap-3';
+                card.dataset.id = item.id;
+                card.onclick = () => selectRightCard(card, item);
+
+                let contentText = "";
+                if (currentStage === 1) contentText = item.translation;
+                else if (currentStage === 2) contentText = item.benefit;
+                else if (currentStage === 3) contentText = item.usage;
+
+                card.innerHTML = `
+                    <div class="text-xs sm:text-sm text-slate-200 font-medium leading-normal">${contentText}</div>
+                    <i class="fa-regular fa-circle text-slate-500 text-xs shrink-0"></i>
+                `;
+                rightContainer.appendChild(card);
+            });
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function selectLeftCard(cardEl, item) {
+            if (cardEl.classList.contains('card-matched')) return;
+            playSound('select');
+
+            // Clear previous selection in left column
+            document.querySelectorAll('#col-left-cards .card-interactive').forEach(el => {
+                if (!el.classList.contains('card-matched')) {
+                    el.classList.remove('card-selected');
+                }
+            });
+
+            cardEl.classList.add('card-selected');
+            selectedLeftCard = { element: cardEl, item: item };
+
+            checkPairing();
+        }
+
+        function selectRightCard(cardEl, item) {
+            if (cardEl.classList.contains('card-matched')) return;
+            playSound('select');
+
+            // Clear previous selection in right column
+            document.querySelectorAll('#col-right-cards .card-interactive').forEach(el => {
+                if (!el.classList.contains('card-matched')) {
+                    el.classList.remove('card-selected');
+                }
+            });
+
+            cardEl.classList.add('card-selected');
+            selectedRightCard = { element: cardEl, item: item };
+
+            checkPairing();
+        }
+
+        function checkPairing() {
+            if (!selectedLeftCard || !selectedRightCard) return;
+
+            const leftItem = selectedLeftCard.item;
+            const rightItem = selectedRightCard.item;
+
+            if (leftItem.id === rightItem.id) {
+                // --- CORRECT MATCH ---
+                playSound('correct');
+                score += 10;
+                updateHUD();
+
+                selectedLeftCard.element.classList.remove('card-selected');
+                selectedRightCard.element.classList.remove('card-selected');
+
+                selectedLeftCard.element.classList.add('card-matched');
+                selectedRightCard.element.classList.add('card-matched');
+
+                // Add checkmark icon
+                selectedLeftCard.element.querySelector('.fa-chevron-right').className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+                selectedRightCard.element.querySelector('.fa-circle').className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+
+                matchedPairs.push(leftItem.id);
+                updateProgressUI(matchedPairs.length, 4);
+
+                // Show Educational Popup for Correct Match
+                showEducationalModal(true, leftItem);
+
+                selectedLeftCard = null;
+                selectedRightCard = null;
+
+            } else {
+                // --- INCORRECT MATCH ---
+                playSound('wrong');
+                score = Math.max(0, score - 5);
+                hearts -= 1;
+                updateHUD();
+
+                const elLeft = selectedLeftCard.element;
+                const elRight = selectedRightCard.element;
+
+                elLeft.classList.add('card-wrong');
+                elRight.classList.add('card-wrong');
+
+                // Show Educational Review Popup for Incorrect Match
+                showEducationalModal(false, leftItem);
+
+                setTimeout(() => {
+                    elLeft.classList.remove('card-wrong', 'card-selected');
+                    elRight.classList.remove('card-wrong', 'card-selected');
+                }, 500);
+
+                selectedLeftCard = null;
+                selectedRightCard = null;
+
+                if (hearts <= 0) {
+                    setTimeout(() => showGameOver(), 600);
+                }
+            }
+        }
+
+        function updateProgressUI(current, total) {
+            document.getElementById('hud-progress-text').innerText = `${current} / ${total} จับคู่สำเร็จ`;
+            const pct = (current / total) * 100;
+            document.getElementById('hud-progress-bar').style.width = `${pct}%`;
+        }
+
+        /* ======================================================================
+         * 6. STAGE 4 SCENARIO TRIPLET ENGINE
+         * ====================================================================== */
+        function loadScenarioQuestion(idx) {
+            scenarioSelections = { code: null, translation: null, usage: null };
+            document.getElementById('btn-submit-scenario').disabled = true;
+
+            const targetItem = scenarioItems[idx];
+            document.getElementById('scenario-index').innerText = idx + 1;
+            document.getElementById('scenario-text').innerText = `"${targetItem.scenario}"`;
+
+            updateProgressUI(idx, 4);
+
+            // Prepare distractor options from full dataset
+            const distractors = CODE_DATASET.filter(d => d.id !== targetItem.id);
+            const pickedDistractors = shuffleArray(distractors).slice(0, 2);
+
+            const codeOptions = shuffleArray([targetItem, ...pickedDistractors]);
+            const transOptions = shuffleArray([targetItem, ...pickedDistractors]);
+            const usageOptions = shuffleArray([targetItem, ...pickedDistractors]);
+
+            renderScenarioSlot('scenario-options-code', codeOptions, 'code', (item) => escapeHtml(item.code), true);
+            renderScenarioSlot('scenario-options-translation', transOptions, 'translation', (item) => item.translation, false);
+            renderScenarioSlot('scenario-options-usage', usageOptions, 'usage', (item) => item.usage, false);
+        }
+
+        function renderScenarioSlot(containerId, options, type, textFn, isCodeStyle) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            options.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'glass-panel p-3 rounded-xl border border-slate-700/80 card-interactive text-xs leading-snug flex items-center justify-between gap-2';
+                card.onclick = () => selectScenarioOption(card, type, item);
+
+                if (isCodeStyle) {
+                    card.innerHTML = `<code class="font-code text-cyan-200 font-semibold">${textFn(item)}</code><i class="fa-regular fa-circle text-slate-500 text-xs"></i>`;
+                } else {
+                    card.innerHTML = `<span class="text-slate-200">${textFn(item)}</span><i class="fa-regular fa-circle text-slate-500 text-xs"></i>`;
+                }
+                container.appendChild(card);
+            });
+        }
+
+        function selectScenarioOption(cardEl, type, item) {
+            playSound('select');
+            const parent = cardEl.parentElement;
+
+            parent.querySelectorAll('.card-interactive').forEach(el => {
+                el.classList.remove('card-selected');
+                el.querySelector('i').className = 'fa-regular fa-circle text-slate-500 text-xs';
+            });
+
+            cardEl.classList.add('card-selected');
+            cardEl.querySelector('i').className = 'fa-solid fa-circle-check text-purple-400 text-sm';
+
+            scenarioSelections[type] = item;
+
+            // Enable submit button if all 3 slots selected
+            if (scenarioSelections.code && scenarioSelections.translation && scenarioSelections.usage) {
+                document.getElementById('btn-submit-scenario').disabled = false;
+            }
+        }
+
+        function evaluateScenarioTriplet() {
+            const targetItem = scenarioItems[scenarioIndex];
+
+            const isCodeCorrect = (scenarioSelections.code.id === targetItem.id);
+            const isTransCorrect = (scenarioSelections.translation.id === targetItem.id);
+            const isUsageCorrect = (scenarioSelections.usage.id === targetItem.id);
+
+            const isAllCorrect = isCodeCorrect && isTransCorrect && isUsageCorrect;
+
+            if (isAllCorrect) {
+                playSound('correct');
+                score += 10;
+                updateHUD();
+                showEducationalModal(true, targetItem);
+            } else {
+                playSound('wrong');
+                score = Math.max(0, score - 5);
+                hearts -= 1;
+                updateHUD();
+                showEducationalModal(false, targetItem);
+
+                if (hearts <= 0) {
+                    setTimeout(() => showGameOver(), 600);
+                }
+            }
+        }
+
+        /* ======================================================================
+         * 7. EDUCATIONAL MODAL & LEVEL PROGRESS CONTROLLER
+         * ====================================================================== */
+        let modalContinueCallback = null;
+
+        function showEducationalModal(isCorrect, item) {
+            const modal = document.getElementById('modal-educational');
+            const card = document.getElementById('edu-modal-card');
+            const badge = document.getElementById('edu-status-badge');
+            const reviewTipBox = document.getElementById('edu-review-tip-box');
+
+            document.getElementById('edu-code').innerText = item.code;
+            document.getElementById('edu-translation').innerText = item.translation;
+            document.getElementById('edu-benefit').innerText = item.benefit;
+            document.getElementById('edu-usage').innerText = item.usage;
+
+            if (isCorrect) {
+                card.className = "glass-panel max-w-lg w-full rounded-3xl p-6 border-2 border-emerald-400/60 space-y-4 text-left shadow-[0_0_40px_rgba(16,185,129,0.3)]";
+                badge.className = "flex items-center gap-2 text-sm sm:text-base font-extrabold text-emerald-400";
+                badge.innerHTML = '<i class="fa-solid fa-circle-check text-xl"></i><span>คำตอบถูกต้อง! (+10 คะแนน)</span>';
+                reviewTipBox.classList.add('hidden');
+            } else {
+                card.className = "glass-panel max-w-lg w-full rounded-3xl p-6 border-2 border-rose-500/60 space-y-4 text-left shadow-[0_0_40px_rgba(244,63,94,0.3)]";
+                badge.className = "flex items-center gap-2 text-sm sm:text-base font-extrabold text-rose-400";
+                badge.innerHTML = '<i class="fa-solid fa-circle-xmark text-xl"></i><span>คำตอบยังไม่ถูกต้อง (-5 คะแนน)</span>';
+                
+                document.getElementById('edu-review-tip-text').innerText = item.reviewTip;
+                reviewTipBox.classList.remove('hidden');
+            }
+
+            modal.classList.remove('hidden');
+
+            modalContinueCallback = () => {
+                if (currentStage <= 3) {
+                    if (matchedPairs.length >= 4) {
+                        showLevelComplete();
+                    }
+                } else if (currentStage === 4) {
+                    if (isCorrect) {
+                        scenarioIndex++;
+                        if (scenarioIndex >= 4) {
+                            showVictory();
+                        } else {
+                            loadScenarioQuestion(scenarioIndex);
+                        }
+                    }
+                }
+            };
+        }
+
+        function closeEducationalModal() {
+            playSound('select');
+            document.getElementById('modal-educational').classList.add('hidden');
+            if (modalContinueCallback) {
+                modalContinueCallback();
+                modalContinueCallback = null;
+            }
+        }
+
+        function showLevelComplete() {
+            playSound('win');
+            document.getElementById('level-complete-desc').innerText = `คุณสะสมคะแนนในด่านที่ ${currentStage} เรียบร้อย พร้อมไปลุยด่านถัดไปหรือยัง?`;
+            document.getElementById('modal-level-complete').classList.remove('hidden');
+        }
+
+        function nextLevel() {
+            playSound('select');
+            document.getElementById('modal-level-complete').classList.add('hidden');
+            currentStage++;
+            if (currentStage <= 4) {
+                loadStage(currentStage);
+            } else {
+                showVictory();
+            }
+        }
+
+        function showVictory() {
+            playSound('win');
+            document.getElementById('victory-score').innerText = score;
+            const gradeEl = document.getElementById('victory-grade');
+
+            if (score >= 120) {
+                gradeEl.innerText = '🌟 ได้รับตราประทับ: "นักเขียนโค้ดไซเบอร์ระดับยอดเยี่ยม (Grade A+)"';
+            } else if (score >= 80) {
+                gradeEl.innerText = '👍 ได้รับตราประทับ: "นักเขียนโค้ดระดับชำนาญการ (Grade B)"';
+            } else {
+                gradeEl.innerText = '💪 ผ่านเกณฑ์การประเมิน! ควรทบทวนความหมายคำสั่งเพิ่มเติม';
+            }
+
+            document.getElementById('modal-victory').classList.remove('hidden');
+        }
+
+        function showGameOver() {
+            document.getElementById('gameover-score').innerText = score;
+            document.getElementById('modal-gameover').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
